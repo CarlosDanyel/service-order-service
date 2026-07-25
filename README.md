@@ -1,7 +1,7 @@
 # Oficina Mecânica Distribuída — Repositório de Infraestrutura Centralizada (`oficina-infra`)
 
 FIAP — Pós Tech | Arquitetura de Software (Fase 3)  
-Docker Compose · Kubernetes · Terraform (IaC) · RabbitMQ Broker · MySQL (SQL) · MongoDB (NoSQL)
+Docker Compose · Kubernetes (K8s) · RabbitMQ Broker · MySQL (SQL) · MongoDB (NoSQL)
 
 ---
 

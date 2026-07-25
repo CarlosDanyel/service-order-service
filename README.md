@@ -1,84 +1,47 @@
-# Tech Challenge — Fase 3: Sistema Distribuído de Ordens de Serviço (Saga Pattern)
+# Tech Challenge — Fase 3: Service Order Microservice (`service-order-service`)
 
-Projeto de arquitetura distribuída em microsserviços para gestão de oficinas mecânicas com múltiplas filiais, garantindo resiliência, consistência transacional e tolerância a falhas.
-
----
-
-## 🛠️ Microsserviços e Arquitetura
-
-O sistema é dividido em microsserviços especializados, cada um com seu próprio repositório, banco de dados e responsabilidade bem definida:
-
-- **`ordem-de-service` (Service Order)**: Gestão de abertura de OS, diagnósticos, execução e atualização de status.
-  - Banco de Dados: MySQL (`oficina_db`)
-- **`payment-billing` (Billing Service)**: Geração de cobranças, integração PIX via Mercado Pago e Webhooks.
-  - Banco de Dados: MySQL (`payment_db`)
-- **`notification-service` (Notification Service)**: Disparo de e-mails via Resend API e auditoria.
-  - Banco de Dados: MongoDB (`notification_db`)
-- **Mensageria**: RabbitMQ (Broker AMQP para orquestração da Saga Coreografada)
+Serviço responsável pela abertura, diagnóstico, atualização de status e acompanhamento do histórico das Ordens de Serviço (OS).
 
 ---
 
-## 🔄 Saga Pattern (Coreografia)
+## 🏛️ Arquitetura do Serviço
 
-Optamos pela **Saga Coreografada** via eventos no RabbitMQ para evitar ponto único de falha e garantir o desacoplamento dos serviços.
+Desenvolvido seguindo os princípios de **Clean Architecture** e **DDD (Domain-Driven Design)**:
 
-### Fluxo Transacional:
-1. `ordem-de-service` cria a OS e envia o evento `QuotationCreatedEvent`.
-2. `notification-service` consome o evento e dispara o e-mail de aprovação.
-3. `payment-billing` recebe o pagamento do Mercado Pago e emite `PaymentApprovedEvent`.
-4. `ordem-de-service` consome a aprovação e finaliza a OS (`DELIVERED`).
-5. **Rollback Compensatório**: Se o pagamento falhar (`PaymentFailedEvent`), a OS é automaticamente cancelada (`CANCELED`).
+- **Domain Layer (`domain`)**: Contém a entidade agregadora `ServiceOrder`, enums de status (`RECEIVED`, `DIAGNOSIS`, `AWAITING_APPROVAL`, `EXECUTION`, `FINISHED`, `DELIVERED`, `CANCELED`) e regras de transição.
+- **Application Layer (`application`)**: Implementa os Casos de Uso (`CreateServiceOrderUseCase`, `UpdateServiceOrderStatusUseCase`, `ApproveQuotationUseCase`).
+- **Infrastructure Layer (`infrastructure`)**: Adaptador JPA de persistência em banco relacional MySQL (`oficina_db`) e publicadores/listeners RabbitMQ para o **Saga Pattern Coreografado**.
 
----
-
-## 🚀 Como Executar o Projeto
-
-### Pré-requisitos
-- Docker e Docker Compose instalados.
-
-### Passo a Passo
-
-1. **Estrutura de Pastas:**
-   Certifique-se de que os repositórios estejam na mesma pasta pai:
-   ```text
-   fase-3/
-   ├── oficina-infra/
-   ├── ordem-de-service/
-   ├── payment-billing/
-   └── notification-service/
-   ```
-
-2. **Iniciar todos os Serviços:**
-   Navegue até a pasta de infraestrutura e rode o comando:
-   ```bash
-   cd oficina-infra
-   docker-compose up -d --build
-   ```
-
-3. **Verificar os Contêineres:**
-   ```bash
-   docker-compose ps
-   ```
-
-4. **Painéis e Documentação (Swagger):**
-   - **RabbitMQ Management**: http://localhost:15672 (`guest` / `guest`)
-   - **OS Service API**: http://localhost:8080/swagger-ui.html
-   - **Payment Billing API**: http://localhost:8081/swagger-ui.html
-   - **Notification API**: http://localhost:8082/swagger-ui.html
+```text
+com.fiap.tech_challenge_fase2/
+├── application/       # Use Cases, Ports (In/Out), DTOs
+├── domain/            # Entities, Aggregates, Enums, Exceptions
+└── infrastructure/    # Persistence (JPA/MySQL), Messaging (RabbitMQ Saga)
+```
 
 ---
 
-## 🧪 Testes e BDD
+## 📬 Coleção do Postman
 
-Para executar os testes unitários e o fluxo BDD com Cucumber:
+O arquivo da coleção completa de testes de API do Postman está disponível na raiz deste repositório:
+- [postman_collection.json](./postman_collection.json)
+
+---
+
+## 🚀 Como Executar o Microsserviço Localmente
+
+### Pré-requisitos:
+- Java 17 e Maven instalados.
+- Banco MySQL rodando na porta `3307` e RabbitMQ na porta `5672` (via Docker Compose).
+
+### Comandos:
 
 ```bash
-# Executar testes no Service Order (inclui Cucumber BDD)
-cd ../ordem-de-service && ./mvnw clean test
+# Executar a suíte de testes unitários e BDD (Cucumber)
+./mvnw clean test
 
-# Executar testes no Payment Billing
-cd ../payment-billing && ./mvnw clean test
-
-# Executar testes no Notification Service
-cd ../notification-service && ./mvnw clean test
+# Subir a aplicação Spring Boot
+./mvnw spring-boot:run
 ```
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html

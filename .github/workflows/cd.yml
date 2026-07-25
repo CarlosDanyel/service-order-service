@@ -1,0 +1,199 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# cd.yml — Entrega Contínua (100% Local)
+#
+# QUANDO RODA:
+#   - Somente quando há push na branch main
+#
+# O QUE FAZ:
+#   Job 1 — docker:
+#     1. Compila o projeto
+#     2. Build da imagem Docker localmente
+#     (sem push para Docker Hub — imagem fica na máquina)
+#
+#   Job 2 — deploy:
+#     3. Aplica Namespace e ConfigMap
+#     4. Cria Secrets com as credenciais reais
+#     5. Deploy do banco MySQL
+#     6. Aguarda MySQL ficar pronto
+#     7. Deploy da aplicação
+#     8. Aplica Service e HPA
+#     9. Aguarda app ficar pronta
+#     10. Mostra status final
+#
+# REQUISITOS:
+#   - Self-hosted Runner rodando na sua máquina
+#   - Docker Desktop com Kubernetes habilitado
+#   - Secrets do GitHub configurados (só os 3 de credenciais)
+#
+# SECRETS NECESSÁRIOS (sem Docker Hub):
+#   DB_PASSWORD           → oficina_pass
+#   MYSQL_ROOT_PASSWORD   → root_password
+#   RESEND_API_KEY        → sua chave do Resend
+# ─────────────────────────────────────────────────────────────────────────────
+name: CD — Deploy Local Kubernetes
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE: tech-challenge-fase2   # imagem local, sem registry externo
+  DOCKER_TAG: latest
+  NAMESPACE: fiap-oficina
+
+jobs:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Build da imagem Docker local
+  # Sem push para nenhum registry externo
+  # ───────────────────────────────────────────────────────────────────────────
+  docker:
+    name: 🐳 Build Docker Local
+    runs-on: self-hosted
+
+    steps:
+
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: ☕ Configura Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 📦 Gera o JAR
+        run: mvn package -DskipTests -B
+
+      # ── Build da imagem localmente ──────────────────────────────────────
+      # A imagem fica no Docker local da máquina.
+      # O Kubernetes do Docker Desktop compartilha as mesmas imagens.
+      # Por isso o imagePullPolicy: IfNotPresent funciona corretamente.
+      - name: 🐳 Build da imagem Docker
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }} .
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Imagem criada: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 🔍 Confirma imagem criada
+        run: docker images | grep ${{ env.DOCKER_IMAGE }}
+
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Deploy no Kubernetes local (Docker Desktop)
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy Kubernetes Local
+    runs-on: self-hosted
+    needs: docker
+
+    steps:
+
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      # ── Verifica se o cluster está acessível ────────────────────────────
+      - name: 🔍 Verifica cluster Kubernetes
+        run: |
+          kubectl get nodes
+          echo "Cluster acessível ✅"
+
+      # ── 1/7 Namespace ────────────────────────────────────────────────────
+      - name: 📦 1/7 — Namespace
+        run: |
+          kubectl apply -f k8s/00-namespace.yaml
+          echo "Namespace '${{ env.NAMESPACE }}' ✅"
+
+      # ── 2/7 ConfigMap ────────────────────────────────────────────────────
+      - name: ⚙️ 2/7 — ConfigMap
+        run: |
+          kubectl apply -f k8s/01-configmap.yaml
+          echo "ConfigMap ✅"
+
+      # ── 3/7 Secrets ──────────────────────────────────────────────────────
+      # Valores vêm dos GitHub Secrets — nunca ficam expostos no código
+      # dry-run + apply = cria se não existe, atualiza se já existe
+      - name: 🔐 3/7 — Secrets
+        run: |
+          kubectl create secret generic oficina-secrets \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+            --from-literal=RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
+            --save-config \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
+          echo "Secrets ✅"
+
+      # ── 4/7 Deploy do banco de dados ─────────────────────────────────────
+      - name: 🗄️ 4/7 — Deploy do MySQL
+        run: |
+          kubectl apply -f k8s/mysql/03-mysql.yaml
+          echo "MySQL aplicado ✅"
+
+      # ── 5/7 Aguarda o MySQL estar pronto ─────────────────────────────────
+      - name: ⏳ 5/7 — Aguarda MySQL
+        run: |
+          echo "Aguardando MySQL inicializar..."
+          kubectl rollout status deployment/mysql \
+            --namespace=${{ env.NAMESPACE }} \
+            --timeout=120s
+          echo "MySQL pronto ✅"
+
+      # ── 6/7 Deploy da aplicação ───────────────────────────────────────────
+      - name: 🚀 6/7 — Deploy da aplicação
+        run: |
+          kubectl apply -f k8s/app/04-deployment.yaml
+          kubectl apply -f k8s/app/05-service-ingress.yaml
+          kubectl apply -f k8s/app/06-hpa.yaml
+          echo "Manifests aplicados ✅"
+
+      # ── Reinicia os pods para pegar a imagem nova ─────────────────────────
+      # Como usamos a tag "latest" localmente, precisamos forçar o restart
+      # para o K8s usar a imagem que acabou de ser buildada
+      - name: 🔄 Reinicia os pods (pega imagem nova)
+        run: |
+          kubectl rollout restart deployment/oficina-app \
+            --namespace=${{ env.NAMESPACE }}
+          echo "Restart solicitado ✅"
+
+      # ── 7/7 Aguarda a aplicação ficar pronta ─────────────────────────────
+      - name: ⏳ 7/7 — Aguarda aplicação
+        run: |
+          echo "Aguardando pods ficarem Running..."
+          kubectl rollout status deployment/oficina-app \
+            --namespace=${{ env.NAMESPACE }} \
+            --timeout=180s
+          echo "Aplicação pronta ✅"
+
+      # ── Status final ──────────────────────────────────────────────────────
+      - name: 📋 Status final
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 PODS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          kubectl get pods -n ${{ env.NAMESPACE }}
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "⚡ HPA"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          kubectl get hpa -n ${{ env.NAMESPACE }}
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Para acessar a aplicação execute:"
+          echo "kubectl port-forward service/oficina-service 8080:80 -n ${{ env.NAMESPACE }}"
+          echo "Swagger: http://localhost:8080/api/swagger-ui.html"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # ── Rollback automático se o deploy falhar ────────────────────────────
+      - name: 🔄 Rollback (se falhar)
+        if: failure()
+        run: |
+          echo "❌ Deploy falhou! Revertendo..."
+          kubectl rollout undo deployment/oficina-app \
+            --namespace=${{ env.NAMESPACE }}
+          echo "✅ Rollback realizado"

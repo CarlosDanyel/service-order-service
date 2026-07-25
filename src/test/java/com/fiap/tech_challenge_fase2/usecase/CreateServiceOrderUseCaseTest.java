@@ -1,11 +1,11 @@
 package com.fiap.tech_challenge_fase2.usecase;
 
 import com.fiap.tech_challenge_fase2.application.dto.CreateServiceOrderCommand;
-import com.fiap.tech_challenge_fase2.application.port.out.EmailNotificationGateway;
 import com.fiap.tech_challenge_fase2.application.port.out.ServiceOrderRepositoryPort;
 import com.fiap.tech_challenge_fase2.application.usecase.CreateServiceOrderUseCaseImpl;
 import com.fiap.tech_challenge_fase2.domain.entity.ServiceOrder;
 import com.fiap.tech_challenge_fase2.domain.enums.ServiceOrderStatus;
+import com.fiap.tech_challenge_fase2.infrastructure.messaging.EventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,17 +26,17 @@ import static org.mockito.Mockito.*;
 class CreateServiceOrderUseCaseTest {
 
     @Mock private ServiceOrderRepositoryPort repository;
-    @Mock private EmailNotificationGateway   emailGateway;
+    @Mock private EventPublisher eventPublisher;
 
     private CreateServiceOrderUseCaseImpl useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new CreateServiceOrderUseCaseImpl(repository, emailGateway);
+        useCase = new CreateServiceOrderUseCaseImpl(repository, eventPublisher);
     }
 
     @Test
-    @DisplayName("Deve criar OS com status RECEIVED e enviar e-mail")
+    @DisplayName("Deve criar OS com status RECEIVED e publicar evento")
     void shouldCreateAndSendEmail() {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -46,8 +47,7 @@ class CreateServiceOrderUseCaseTest {
         assertThat(result.getOrderNumber()).startsWith("OS-");
 
         verify(repository, times(1)).save(any());
-        verify(emailGateway, times(1)).sendStatusUpdateEmail(any());
-        verify(emailGateway, never()).sendQuotationApprovalEmail(any());
+        verify(eventPublisher, times(1)).publishEvent(anyString(), any());
     }
 
     @Test

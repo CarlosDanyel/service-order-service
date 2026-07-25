@@ -1,7 +1,6 @@
 package com.fiap.tech_challenge_fase2.usecase;
 
 import com.fiap.tech_challenge_fase2.application.dto.ApproveQuotationCommand;
-import com.fiap.tech_challenge_fase2.application.port.out.EmailNotificationGateway;
 import com.fiap.tech_challenge_fase2.application.port.out.ServiceOrderRepositoryPort;
 import com.fiap.tech_challenge_fase2.application.usecase.ApproveQuotationUseCaseImpl;
 import com.fiap.tech_challenge_fase2.domain.entity.*;
@@ -20,7 +19,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,7 +26,6 @@ import static org.mockito.Mockito.when;
 class ApproveQuotationUseCaseTest {
 
     @Mock private ServiceOrderRepositoryPort repository;
-    @Mock private EmailNotificationGateway   emailGateway;
 
     private ApproveQuotationUseCaseImpl useCase;
     private ServiceOrder                 orderAwaitingApproval;
@@ -36,7 +33,7 @@ class ApproveQuotationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new ApproveQuotationUseCaseImpl(repository, emailGateway);
+        useCase = new ApproveQuotationUseCaseImpl(repository);
 
         Customer customer = Customer.create("Pedro Alves", "pedro@test.com", "11977776666");
         Vehicle  vehicle  = Vehicle.create("PDR-9999", "Honda", "Fit", 2021, "Azul");
@@ -59,7 +56,6 @@ class ApproveQuotationUseCaseTest {
                 new ApproveQuotationCommand(orderAwaitingApproval.getId(), validToken, true));
 
         assertThat(result.getStatus()).isEqualTo(ServiceOrderStatus.EXECUTION);
-        verify(emailGateway).sendStatusUpdateEmail(any());
     }
 
     @Test
@@ -73,7 +69,6 @@ class ApproveQuotationUseCaseTest {
                 new ApproveQuotationCommand(orderAwaitingApproval.getId(), validToken, false));
 
         assertThat(result.getStatus()).isEqualTo(ServiceOrderStatus.DIAGNOSIS);
-        verify(emailGateway).sendStatusUpdateEmail(any());
     }
 
     @Test

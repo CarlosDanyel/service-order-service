@@ -7,7 +7,8 @@ public enum ServiceOrderStatus {
     AWAITING_APPROVAL("Aguardando Aprovação"),
     EXECUTION("Em Execução"),
     FINISHED("Finalizada"),
-    DELIVERED("Entregue");
+    DELIVERED("Entregue"),
+    CANCELED("Cancelada");
 
     private final String description;
 
@@ -20,13 +21,16 @@ public enum ServiceOrderStatus {
     }
 
     public boolean canTransitionTo(ServiceOrderStatus next) {
+        if (next == CANCELED && this != DELIVERED && this != FINISHED) {
+            return true;
+        }
         return switch (this) {
             case RECEIVED          -> next == DIAGNOSIS;
             case DIAGNOSIS         -> next == AWAITING_APPROVAL;
             case AWAITING_APPROVAL -> next == EXECUTION || next == DIAGNOSIS;
             case EXECUTION         -> next == FINISHED;
             case FINISHED          -> next == DELIVERED;
-            case DELIVERED         -> false;
+            case DELIVERED, CANCELED -> false;
         };
     }
 }

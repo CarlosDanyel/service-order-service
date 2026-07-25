@@ -2,21 +2,22 @@ package com.fiap.tech_challenge_fase2.application.usecase;
 
 import com.fiap.tech_challenge_fase2.application.dto.CreateServiceOrderCommand;
 import com.fiap.tech_challenge_fase2.application.port.in.CreateServiceOrderUseCase;
-import com.fiap.tech_challenge_fase2.application.port.out.EmailNotificationGateway;
 import com.fiap.tech_challenge_fase2.application.port.out.ServiceOrderRepositoryPort;
 import com.fiap.tech_challenge_fase2.domain.entity.*;
+import com.fiap.tech_challenge_fase2.infrastructure.messaging.EventPublisher;
+import com.fiap.tech_challenge_fase2.infrastructure.messaging.RabbitMQConfig;
+import com.fiap.tech_challenge_fase2.infrastructure.messaging.ServiceOrderEvents;
 
 import java.util.List;
 
 public class CreateServiceOrderUseCaseImpl implements CreateServiceOrderUseCase {
 
     private final ServiceOrderRepositoryPort repository;
-    private final EmailNotificationGateway   emailGateway;
+    private final EventPublisher eventPublisher;
 
-    public CreateServiceOrderUseCaseImpl(ServiceOrderRepositoryPort repository,
-                                         EmailNotificationGateway emailGateway) {
-        this.repository   = repository;
-        this.emailGateway = emailGateway;
+    public CreateServiceOrderUseCaseImpl(ServiceOrderRepositoryPort repository, EventPublisher eventPublisher) {
+        this.repository = repository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -27,9 +28,20 @@ public class CreateServiceOrderUseCaseImpl implements CreateServiceOrderUseCase 
         List<PartItem>     parts    = buildParts(command.parts());
 
         ServiceOrder serviceOrder = ServiceOrder.open(customer, vehicle, services, parts, command.notes());
-        ServiceOrder saved        = repository.save(serviceOrder);
+        ServiceOrder saved = repository.save(serviceOrder);
 
-        emailGateway.sendStatusUpdateEmail(saved);
+        String vehicleInfo = saved.getVehicle().getBrand() + " " + saved.getVehicle().getModel() + " (" + saved.getVehicle().getYear() + ") - Placa: " + saved.getVehicle().getLicensePlate();
+        eventPublisher.publishEvent(
+                RabbitMQConfig.ROUTING_KEY_OS_CREATED,
+                new ServiceOrderEvents.ServiceOrderCreatedEvent(
+                        saved.getId(),
+                        saved.getOrderNumber(),
+                        saved.getCustomer().getName(),
+                        saved.getCustomer().getEmail(),
+                        vehicleInfo,
+                        saved.getStatus().name()
+                )
+        );
 
         return saved;
     }

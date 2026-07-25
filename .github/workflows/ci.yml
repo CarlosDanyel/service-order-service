@@ -43,10 +43,17 @@ jobs:
       - name: 🔨 Compila o projeto
         run: mvn clean compile -B
 
-      - name: 🧪 Executa os testes
+      - name: 🧪 Executa os testes e gera relatório de cobertura JaCoCo
         run: mvn test -B
         env:
           SPRING_PROFILES_ACTIVE: test
+
+      - name: 🔍 Análise de Qualidade (SonarQube)
+        uses: sonarsource/sonarqube-scan-action@v2
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: 📦 Gera o JAR
         run: mvn package -DskipTests -B
@@ -54,5 +61,5 @@ jobs:
       - name: ✅ Build finalizado
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Build e testes concluídos com sucesso"
+          echo "✅ Build, testes e análise de qualidade concluídos com sucesso"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

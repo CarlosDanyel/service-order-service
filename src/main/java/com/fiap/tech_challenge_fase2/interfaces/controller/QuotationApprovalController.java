@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/quotations")
+@RequestMapping("/api/quotations")
 @Tag(name = "3. Aprovação de Orçamento",
      description = "Endpoint para aprovação ou recusa de orçamento pelo cliente via link de e-mail")
 public class QuotationApprovalController {

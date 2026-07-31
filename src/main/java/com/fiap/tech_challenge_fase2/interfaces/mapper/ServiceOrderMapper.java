@@ -30,6 +30,7 @@ public class ServiceOrderMapper {
                 domain.getOrderNumber(),
                 domain.getStatus().name(),
                 domain.getStatus().getDescription(),
+                domain.getApprovalToken(),
                 new ServiceOrderResponse.CustomerResponse(
                         domain.getCustomer().getId(), domain.getCustomer().getName(),
                         domain.getCustomer().getEmail(), domain.getCustomer().getPhone()),

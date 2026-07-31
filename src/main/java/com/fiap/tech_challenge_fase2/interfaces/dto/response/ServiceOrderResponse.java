@@ -9,6 +9,7 @@ public record ServiceOrderResponse(
         String orderNumber,
         String status,
         String statusDescription,
+        String approvalToken,
         CustomerResponse customer,
         VehicleResponse vehicle,
         List<ServiceItemResponse> services,

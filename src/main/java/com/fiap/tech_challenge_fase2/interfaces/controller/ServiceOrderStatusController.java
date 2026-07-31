@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/service-orders")
+@RequestMapping("/api/service-orders")
 @Tag(name = "2. Status e Listagem de OS",
      description = "Consulta, listagem e atualização de status das Ordens de Serviço")
 public class ServiceOrderStatusController {

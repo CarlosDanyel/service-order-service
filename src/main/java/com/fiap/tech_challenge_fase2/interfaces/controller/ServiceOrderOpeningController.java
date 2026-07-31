@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/service-orders")
+@RequestMapping("/api/service-orders")
 @Tag(name = "1. Abertura de OS", description = "Endpoint para abertura de novas Ordens de Serviço")
 public class ServiceOrderOpeningController {
 

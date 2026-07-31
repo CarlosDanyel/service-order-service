@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: oficina-config
+  name: service-order-config
   namespace: fiap-oficina
   labels:
     app: service-order-service

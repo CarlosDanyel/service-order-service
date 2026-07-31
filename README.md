@@ -1,18 +1,34 @@
-# Service Order Microservice (`service-order-service`)
+# Service Order Microservice (`ordem-de-service`)
 
 Serviço responsável pela abertura, diagnóstico, atualização de status e acompanhamento do histórico das Ordens de Serviço (OS).
 
 ---
 
+## Tecnologias
+
+| Categoria | Tecnologia |
+|---|---|
+| Linguagem | Java 17 |
+| Framework | Spring Boot 3 |
+| Build | Maven |
+| Banco de Dados | MySQL 8 |
+| Mensageria | RabbitMQ (Topic Exchange) |
+| Testes | JUnit 5, Mockito, Cucumber (BDD), JaCoCo |
+| Container | Docker, Kubernetes |
+| CI/CD | GitHub Actions, SonarQube |
+| Documentação | Swagger (OpenAPI 3) |
+
+---
+
 ## Arquitetura do Serviço
 
-Desenvolvido seguindo os princípios de Clean Architecture e DDD (Domain-Driven Design):
+Desenvolvido seguindo os princípios de **Clean Architecture** e **DDD (Domain-Driven Design)**:
 
 - **Domain Layer (`domain`)**: Contém a entidade agregadora `ServiceOrder`, enums de status (`RECEIVED`, `DIAGNOSIS`, `AWAITING_APPROVAL`, `EXECUTION`, `FINISHED`, `DELIVERED`, `CANCELED`) e regras de transição.
 - **Application Layer (`application`)**: Implementa os Casos de Uso (`CreateServiceOrderUseCase`, `UpdateServiceOrderStatusUseCase`, `ApproveQuotationUseCase`).
-- **Infrastructure Layer (`infrastructure`)**: Adaptador JPA de persistência em banco relacional MySQL (`oficina_db`) e publicadores/listeners RabbitMQ para o **Saga Pattern Coreografado**.
+- **Infrastructure Layer (`infrastructure`)**: Adaptador JPA de persistência em banco relacional MySQL e publicadores/listeners RabbitMQ para o **Saga Pattern Coreografado**.
 
-```text
+```
 com.fiap.tech_challenge_fase2/
 ├── application/       # Use Cases, Ports (In/Out), DTOs
 ├── domain/            # Entities, Aggregates, Enums, Exceptions
@@ -34,7 +50,7 @@ com.fiap.tech_challenge_fase2/
 | **Observabilidade** | Rastreamento por correlation ID nos eventos | Centralizado no orquestrador |
 | **Ideal para** | Fluxos bem definidos com poucos participantes (3-4 serviços) | Fluxos complexos com muitas ramificações condicionais |
 
-**Justificativa:** Nosso sistema tem apenas 3 microsserviços com um fluxo linear bem definido (OS → Orçamento → Pagamento → Entrega). O modelo coreografado elimina o ponto único de falha de um orquestrador central, reduz o acoplamento entre serviços e se alinha ao princípio de autonomia dos microsserviços. A comunicação é totalmente assíncrona via RabbitMQ Topic Exchange (`oficina.exchange`).
+**Justificativa:** O sistema tem 3 microsserviços com um fluxo linear bem definido (OS → Orçamento → Pagamento → Entrega). O modelo coreografado elimina o ponto único de falha de um orquestrador central, reduz o acoplamento entre serviços e se alinha ao princípio de autonomia dos microsserviços. A comunicação é totalmente assíncrona via RabbitMQ Topic Exchange (`oficina.exchange`).
 
 ### Fluxo do Saga
 
@@ -62,12 +78,63 @@ Quando o pagamento falha (`PaymentFailedEvent`), o **ordem-de-service** executa 
 
 ---
 
+## Documentação da API (Swagger)
+
+A documentação interativa da API está disponível via Swagger UI:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+
 ---
 
-## Coleção do Postman
+## Coleção Postman
 
 O arquivo da coleção completa de testes de API do Postman está disponível na raiz deste repositório:
+
 - [postman_collection.json](./postman_collection.json)
+
+A coleção contém o fluxo completo do Saga Pattern coreografado:
+- **Happy Path**: OS → Diagnóstico → Orçamento → Aprovação → Pagamento PIX → Entrega
+- **Rollback**: Falha de pagamento → Compensação (OS → CANCELED)
+
+**Importe no Postman e execute as requests na ordem das pastas.**
+
+---
+
+## Evidências de Cobertura de Testes
+
+A cobertura de testes é verificada via **JaCoCo** com o mínimo de **80%** exigido no pipeline de CI.
+
+![Cobertura de Testes - JaCoCo](.docs/coverage.png)
+
+### Executar Testes
+
+```bash
+# Executar todos os testes (unitários + BDD)
+./mvnw clean test
+
+# Executar testes com verificação de cobertura (JaCoCo ≥ 80%)
+./mvnw clean verify
+
+# Relatório de cobertura (HTML)
+open target/site/jacoco/index.html
+```
+
+### CI/CD
+
+| Pipeline | Trigger | O que faz |
+|---|---|---|
+| **CI** | Push e Pull Request | Build + Testes + JaCoCo + SonarQube |
+| **CD** | Push na `main` | Docker build + Deploy K8s + Rollback automático |
+
+---
+
+## Inicialização do Projeto (Infraestrutura)
+
+A inicialização completa da infraestrutura (subida de bancos de dados, RabbitMQ, e demais dependências) está documentada no repositório:
+
+🔗 **[oficina-infra](https://github.com/CarlosDanyel/oficina-infra)**
+
+Consulte o README do `oficina-infra` para instruções detalhadas de como provisionar o ambiente local e realizar o deploy completo no Kubernetes.
 
 ---
 
@@ -75,7 +142,7 @@ O arquivo da coleção completa de testes de API do Postman está disponível na
 
 ### Pré-requisitos:
 - Java 17 e Maven instalados.
-- Banco MySQL rodando na porta `3307` e RabbitMQ na porta `5672` (via Docker Compose).
+- Infraestrutura provisionada conforme o [oficina-infra](https://github.com/CarlosDanyel/oficina-infra): MySQL na porta `3307` e RabbitMQ na porta `5672`.
 
 ### Comandos:
 
@@ -86,22 +153,6 @@ O arquivo da coleção completa de testes de API do Postman está disponível na
 # Subir a aplicação Spring Boot
 ./mvnw spring-boot:run
 ```
-
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-
----
-
-## Como Iniciar com Kubernetes
-
-O deploy completo no Kubernetes e o fluxo do Saga Pattern estão documentados no guia central:
-
-📖 **[GUIA_RUN.md — Guia Completo de Execução](../GUIA_RUN.md)**
-
-Inclui:
-- Deploy da infraestrutura (RabbitMQ, MySQL, MongoDB) via `oficina-infra`
-- Deploy dos microsserviços com `kubectl apply -k k8s/`
-- Fluxo completo do Saga Pattern (Happy Path + Rollback) via Postman
-- Deploy automatizado com CI/CD (GitHub Actions)
 
 ### Deploy rápido (K8s)
 
@@ -115,35 +166,3 @@ kubectl apply -k k8s/
 # 3. Acessar localmente
 kubectl port-forward svc/service-order-service 8080:80 -n fiap-oficina
 ```
-
----
-
-## Testes e Cobertura
-
-```bash
-# Executar todos os testes (unitários + BDD)
-./mvnw clean test
-
-# Executar testes com verificação de cobertura (JaCoCo ≥ 80%)
-./mvnw clean verify
-
-# Relatório de cobertura
-open target/site/jacoco/index.html
-```
-
-### CI/CD
-
-| Pipeline | Trigger | O que faz |
-|---|---|---|
-| **CI** | Push e Pull Request | Build + Testes + JaCoCo + SonarQube |
-| **CD** | Push na `main` | Docker build + Deploy K8s + Rollback automático |
-
----
-
-## Coleção Postman
-
-O arquivo `postman_collection.json` contém o fluxo completo do Saga Pattern coreografado:
-- Happy Path: OS → Diagnóstico → Orçamento → Aprovação → Pagamento PIX → Entrega
-- Rollback: Falha de pagamento → Compensação (OS → CANCELED)
-
-**Importe no Postman e execute as requests na ordem das pastas.**

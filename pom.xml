@@ -113,6 +113,15 @@
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.11</version>
+				<configuration>
+					<excludes>
+						<exclude>com/fiap/tech_challenge_fase2/TechChallengeFase2Application.class</exclude>
+						<exclude>com/fiap/tech_challenge_fase2/infrastructure/config/**</exclude>
+						<exclude>com/fiap/tech_challenge_fase2/infrastructure/persistence/entity/**</exclude>
+						<exclude>com/fiap/tech_challenge_fase2/interfaces/dto/**</exclude>
+						<exclude>com/fiap/tech_challenge_fase2/application/dto/**</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>

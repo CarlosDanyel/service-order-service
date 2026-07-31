@@ -97,11 +97,14 @@ jobs:
           kubectl apply -f k8s/00-namespace.yaml
           echo "Namespace '${{ env.NAMESPACE }}' ✅"
 
-      # ── 2/6 ConfigMap ────────────────────────────────────────────────────
-      - name: ⚙️ 2/6 — ConfigMap
+      # ── 2/6 ConfigMap e Secrets (via Kustomize / .env) ───────────────────
+      - name: ⚙️ 2/6 — ConfigMap e Secrets
         run: |
-          kubectl apply -f k8s/01-configmap.yaml
-          echo "ConfigMap ✅"
+          if [ ! -f k8s/.env ]; then
+            cp k8s/.env.example k8s/.env
+          fi
+          kubectl apply -k k8s/
+          echo "ConfigMap e Secrets gerados via Kustomize ✅"
 
       # ── 3/6 Secrets ──────────────────────────────────────────────────────
       - name: 🔐 3/6 — Secrets

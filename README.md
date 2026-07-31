@@ -27,7 +27,7 @@ Copie o arquivo [`.env.example`](./.env.example) para `.env` na raiz do projeto 
 
 ## 📐 Documentação da Arquitetura do Serviço
 
-Projetado seguindo os princípios da **Clean Architecture** e **Domain-Driven Design (DDD)**, com o domínio rico isolado de frameworks e detalhes de infraestrutura.
+Projetado seguindo os princípios da **Clean Architecture**, com o domínio rico isolado de frameworks e detalhes de infraestrutura.
 
 ### Estrutura de Pacotes
 

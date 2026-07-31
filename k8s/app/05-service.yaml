@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-order-service
+  namespace: fiap-oficina
+  labels:
+    app: service-order-service
+spec:
+  type: ClusterIP
+  selector:
+    app: service-order-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

@@ -56,7 +56,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGeneric(Exception ex,  HttpServletRequest request) {
+    public ProblemDetail handleGeneric(Exception ex, HttpServletRequest request) throws Exception {
+        if (ex instanceof org.springframework.web.servlet.resource.NoResourceFoundException) {
+            throw ex;
+        }
+
         log.error("Erro interno na requisição {} {}", request.getMethod(), request.getRequestURI(), ex);
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(

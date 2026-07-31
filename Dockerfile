@@ -15,7 +15,7 @@ USER fiap
 
 WORKDIR /app
 
-COPY --from=builder /app/target/tech-challenge-fase2-*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget -qO- http://localhost:8080/actuator/health || exit 1

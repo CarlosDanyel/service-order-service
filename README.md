@@ -17,6 +17,9 @@ Serviço responsável pela abertura, diagnóstico, atualização de status e aco
 - **Containerização & Orquestração**: Docker, Kubernetes
 - **CI/CD**: GitHub Actions, SonarQube
 
+> [!WARNING]
+> **Configuração Obrigatória — Arquivo `.env`**: Para executar o projeto localmente ou em contêineres, é necessário criar o arquivo `.env` na **raiz do projeto** a partir do modelo [`.env.example`](./.env.example). O mesmo arquivo `.env` deve ser copiado para o diretório `k8s/` antes de aplicar os manifests no Kubernetes. Sem esse arquivo as variáveis de ambiente (banco de dados, RabbitMQ, etc.) não serão injetadas e o serviço não subirá corretamente.
+
 ---
 
 ## 📐 Documentação da Arquitetura do Serviço

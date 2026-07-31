@@ -7,6 +7,12 @@ Serviço responsável pela abertura, diagnóstico, atualização de status e aco
 
 ---
 
+## 🚀 Configuração Inicial
+
+Copie o arquivo [`.env.example`](./.env.example) para `.env` na raiz do projeto e em [`k8s/`](./k8s/.env.example) antes de executar o serviço.
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem & Framework**: Java 17, Spring Boot 3.3.5
@@ -16,9 +22,6 @@ Serviço responsável pela abertura, diagnóstico, atualização de status e aco
 - **Testes & Cobertura**: JUnit 5, Mockito, Cucumber (BDD), JaCoCo
 - **Containerização & Orquestração**: Docker, Kubernetes
 - **CI/CD**: GitHub Actions, SonarQube
-
-> [!WARNING]
-> **Configuração Obrigatória — Arquivo `.env`**: Para executar o projeto localmente ou em contêineres, é necessário criar o arquivo `.env` na **raiz do projeto** a partir do modelo [`.env.example`](./.env.example). O mesmo arquivo `.env` deve ser copiado para o diretório `k8s/` antes de aplicar os manifests no Kubernetes. Sem esse arquivo as variáveis de ambiente (banco de dados, RabbitMQ, etc.) não serão injetadas e o serviço não subirá corretamente.
 
 ---
 
@@ -76,6 +79,7 @@ Os testes unitários e BDD garantem a confiabilidade do serviço com cobertura s
 ### Relatório de Cobertura de Testes (JaCoCo)
 
 ![Relatório de Cobertura JaCoCo](./.docs/coverage.png)
+
 ---
 
 ## 📑 Swagger UI e Coleção Postman

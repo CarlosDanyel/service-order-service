@@ -9,9 +9,9 @@ Manifests para deploy do microsserviço de Ordens de Serviço no Kubernetes.
 ```
 k8s/
 ├── 00-namespace.yaml       # Namespace fiap-oficina
-├── 01-configmap.yaml       # ConfigMap (DB, RabbitMQ, URLs — não sensíveis)
-├── 02-secret.yaml          # Secret (senhas e credenciais)
-├── kustomization.yaml      # Kustomize (aplica todos os manifests)
+├── .env                    # Variáveis de ambiente e segredos (ConfigMap e Secret)
+├── .env.example            # Modelo com todas as variáveis
+├── kustomization.yaml      # Kustomize (gera ConfigMap/Secret a partir do .env e aplica tudo)
 └── app/
     ├── 04-deployment.yaml  # Deployment com 2 réplicas, probes, anti-affinity
     ├── 05-service.yaml     # Service ClusterIP (porta 80 → 8080)
@@ -22,17 +22,13 @@ k8s/
 
 ---
 
-## Pré-requisitos
+## Configuração (ANTES de aplicar)
+
+Certifique-se de que o arquivo `.env` existe na pasta `k8s/`:
 
 ```bash
-# Cluster Kubernetes rodando
-minikube start --cpus=4 --memory=4096
-
-# Metrics Server (necessário para HPA)
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-# NGINX Ingress Controller (gerenciado pelo oficina-infra)
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+# Criar o .env a partir do exemplo se ainda não existir:
+cp k8s/.env.example k8s/.env
 ```
 
 ---
@@ -40,24 +36,8 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 ## Deploy
 
 ```bash
-# Aplicar todos os manifests
+# Aplicar todos os manifests via Kustomize
 kubectl apply -k k8s/
-
-# Ou individualmente:
-kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secret.yaml
-kubectl apply -f k8s/app/04-deployment.yaml
-kubectl apply -f k8s/app/05-service.yaml
-kubectl apply -f k8s/app/06-hpa.yaml
-```
-
----
-
-## Configurar Secrets (ANTES de aplicar)
-
-```bash
-echo -n "oficina_pass" | base64   # → atualizar 02-secret.yaml
 ```
 
 ---

@@ -8,10 +8,21 @@ kind: Kustomization
 
 namespace: fiap-oficina
 
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: service-order-config
+    envs:
+      - .env
+
+secretGenerator:
+  - name: oficina-secrets
+    envs:
+      - .env
+
 resources:
   - 00-namespace.yaml
-  - 01-configmap.yaml
-  - 02-secret.yaml
   - app/04-deployment.yaml
   - app/05-service.yaml
   - app/06-hpa.yaml

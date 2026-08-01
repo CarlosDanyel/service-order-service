@@ -161,6 +161,21 @@ class ServiceOrderTest {
         assertThat(os.isDeleted()).isTrue();
     }
 
+    @Test
+    @DisplayName("Deve atualizar serviços e peças durante o diagnóstico")
+    void shouldUpdateItemsSuccessfully() {
+        ServiceOrder os = ServiceOrder.open(customer, vehicle, List.of(), List.of(), "Troca simples");
+        ServiceItem s1 = ServiceItem.create("Alinhamento", "Alinhamento 3D", new BigDecimal("100.00"), 1.0);
+        PartItem p1 = PartItem.create("Pastilha de Freio", "PF-100", 2, new BigDecimal("80.00"));
+
+        os.transitionTo(ServiceOrderStatus.DIAGNOSIS);
+        os.updateItems(List.of(s1), List.of(p1));
+
+        assertThat(os.getServices()).hasSize(1);
+        assertThat(os.getParts()).hasSize(1);
+        assertThat(os.calculateTotalAmount()).isEqualByComparingTo(new BigDecimal("260.00"));
+    }
+
 
     private ServiceOrder prepareAwaitingApproval() {
         ServiceOrder os = ServiceOrder.open(customer, vehicle, List.of(), List.of(), null);

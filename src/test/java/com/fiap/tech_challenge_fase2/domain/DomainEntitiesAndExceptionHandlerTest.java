@@ -145,7 +145,7 @@ class DomainEntitiesAndExceptionHandlerTest {
         for (ServiceOrderStatus status : ServiceOrderStatus.values()) {
             assertThat(status.getDescription()).isNotBlank();
 
-            if (status != ServiceOrderStatus.FINISHED && status != ServiceOrderStatus.DELIVERED) {
+            if (status != ServiceOrderStatus.DELIVERED) {
                 assertThat(status.canTransitionTo(ServiceOrderStatus.CANCELED)).isTrue();
             } else {
                 assertThat(status.canTransitionTo(ServiceOrderStatus.CANCELED)).isFalse();

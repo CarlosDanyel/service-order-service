@@ -21,7 +21,7 @@ public enum ServiceOrderStatus {
     }
 
     public boolean canTransitionTo(ServiceOrderStatus next) {
-        if (next == CANCELED && this != DELIVERED && this != FINISHED) {
+        if (next == CANCELED && this != DELIVERED) {
             return true;
         }
         return switch (this) {

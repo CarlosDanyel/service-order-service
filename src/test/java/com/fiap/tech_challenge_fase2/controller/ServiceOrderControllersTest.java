@@ -131,6 +131,27 @@ class ServiceOrderControllersTest {
     }
 
     @Test
+    @DisplayName("PATCH /api/service-orders/{id}/status — deve atualizar status enviando serviços e peças no diagnóstico")
+    void shouldUpdateStatusWithServicesAndParts() throws Exception {
+        ServiceOrder mock = buildMockOrderWithStatus(ServiceOrderStatus.DIAGNOSIS);
+        when(updateStatusUseCase.execute(any())).thenReturn(mock);
+
+        CreateServiceOrderRequest.ServiceItemRequest sReq = new CreateServiceOrderRequest.ServiceItemRequest(
+                "Troca de Óleo", "Desc", new BigDecimal("150.00"), 1.0);
+        CreateServiceOrderRequest.PartItemRequest pReq = new CreateServiceOrderRequest.PartItemRequest(
+                "Filtro", "P-100", 1, new BigDecimal("40.00"));
+
+        UpdateStatusRequest req = new UpdateStatusRequest(
+                ServiceOrderStatus.DIAGNOSIS, List.of(sReq), List.of(pReq));
+
+        mockMvc.perform(patch("/api/service-orders/{id}/status", mock.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DIAGNOSIS"));
+    }
+
+    @Test
     @DisplayName("GET /api/quotations/{id}?token=X&approved=true — deve aprovar orçamento")
     void shouldApproveQuotation() throws Exception {
         ServiceOrder mock = buildMockOrderWithStatus(ServiceOrderStatus.EXECUTION);

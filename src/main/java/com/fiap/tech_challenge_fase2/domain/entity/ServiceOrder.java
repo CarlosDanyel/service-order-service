@@ -64,6 +64,18 @@ public class ServiceOrder {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void updateItems(List<ServiceItem> newServices, List<PartItem> newParts) {
+        if (newServices != null) {
+            this.services.clear();
+            this.services.addAll(newServices);
+        }
+        if (newParts != null) {
+            this.parts.clear();
+            this.parts.addAll(newParts);
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void generateApprovalToken() {
         this.approvalToken = UUID.randomUUID().toString();
         this.updatedAt     = LocalDateTime.now();

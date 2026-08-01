@@ -83,7 +83,7 @@ public class ServiceOrderStatusController {
             @Parameter(description = "ID único da OS") @PathVariable String id,
             @Valid @RequestBody UpdateStatusRequest request) {
 
-        UpdateStatusCommand command      = new UpdateStatusCommand(id, request.newStatus());
+        UpdateStatusCommand command      = mapper.toUpdateStatusCommand(id, request);
         ServiceOrder        serviceOrder = updateStatusUseCase.execute(command);
         return ResponseEntity.ok(mapper.toResponse(serviceOrder));
     }

@@ -25,6 +25,10 @@ public class UpdateServiceOrderStatusUseCaseImpl implements UpdateServiceOrderSt
         ServiceOrder serviceOrder = repository.findById(command.serviceOrderId())
                 .orElseThrow(() -> new ServiceOrderNotFoundException(command.serviceOrderId()));
 
+        if (command.services() != null || command.parts() != null) {
+            serviceOrder.updateItems(command.services(), command.parts());
+        }
+
         serviceOrder.transitionTo(command.newStatus());
 
         if (command.newStatus() == ServiceOrderStatus.AWAITING_APPROVAL) {

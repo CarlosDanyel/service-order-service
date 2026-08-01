@@ -1,8 +1,12 @@
 package com.fiap.tech_challenge_fase2.interfaces.mapper;
 
 import com.fiap.tech_challenge_fase2.application.dto.CreateServiceOrderCommand;
+import com.fiap.tech_challenge_fase2.application.dto.UpdateStatusCommand;
+import com.fiap.tech_challenge_fase2.domain.entity.PartItem;
+import com.fiap.tech_challenge_fase2.domain.entity.ServiceItem;
 import com.fiap.tech_challenge_fase2.domain.entity.ServiceOrder;
 import com.fiap.tech_challenge_fase2.interfaces.dto.request.CreateServiceOrderRequest;
+import com.fiap.tech_challenge_fase2.interfaces.dto.request.UpdateStatusRequest;
 import com.fiap.tech_challenge_fase2.interfaces.dto.response.ServiceOrderResponse;
 import org.springframework.stereotype.Component;
 
@@ -57,6 +61,30 @@ public class ServiceOrderMapper {
 
     public List<ServiceOrderResponse> toResponseList(List<ServiceOrder> domains) {
         return domains.stream().map(this::toResponse).toList();
+    }
+
+    public UpdateStatusCommand toUpdateStatusCommand(String id, UpdateStatusRequest req) {
+        List<ServiceItem> services = req.services() != null ? toServiceItemsDomain(req.services()) : null;
+        List<PartItem> parts = req.parts() != null ? toPartItemsDomain(req.parts()) : null;
+        return new UpdateStatusCommand(id, req.newStatus(), services, parts);
+    }
+
+    public List<ServiceItem> toServiceItemsDomain(
+            List<CreateServiceOrderRequest.ServiceItemRequest> items) {
+        if (items == null) return List.of();
+        return items.stream()
+                .map(s -> ServiceItem.create(
+                        s.name(), s.description(), s.price(), s.estimatedHours()))
+                .toList();
+    }
+
+    public List<PartItem> toPartItemsDomain(
+            List<CreateServiceOrderRequest.PartItemRequest> items) {
+        if (items == null) return List.of();
+        return items.stream()
+                .map(p -> PartItem.create(
+                        p.name(), p.partNumber(), p.quantity(), p.unitPrice()))
+                .toList();
     }
 
     private List<CreateServiceOrderCommand.ServiceItemData> toServiceItemsCommand(

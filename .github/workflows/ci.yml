@@ -2,13 +2,14 @@
 # ci.yml — Integração Contínua (100% Local)
 #
 # QUANDO RODA:
-#   - Todo push em qualquer branch
-#   - Todo Pull Request aberto para a main
+#   - Pull Request aberto para a main
+#   - CD roda automaticamente no merge pra main
 #
 # O QUE FAZ:
 #   1. Compila o projeto
 #   2. Roda todos os testes (usa H2 em memória — sem MySQL)
-#   3. Gera o JAR
+#   3. Análise de qualidade no SonarQube
+#   4. Gera o JAR
 #
 # REQUISITO:
 #   Self-hosted Runner instalado na sua máquina.
@@ -17,8 +18,6 @@
 name: CI — Build e Testes
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
     branches: [ main ]
 

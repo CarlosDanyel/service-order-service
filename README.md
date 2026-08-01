@@ -101,3 +101,4 @@ A coleção do Postman para testes do ecossistema encontra-se no repositório:
 A coleção contempla:
 - **Happy Path**: Abertura OS → Diagnóstico → Orçamento → Aprovação → Pagamento PIX → Entrega
 - **Rollback**: Falha de pagamento → Compensação (OS → `CANCELED`)
+# Deploy Sat Aug  1 00:46:54 -03 2026

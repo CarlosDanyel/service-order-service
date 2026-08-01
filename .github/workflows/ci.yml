@@ -49,7 +49,7 @@ jobs:
           SPRING_PROFILES_ACTIVE: test
 
       - name: 🔍 Análise de Qualidade (SonarQube)
-        run: mvn sonar:sonar -B -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.token=${{ secrets.SONAR_TOKEN }} -Dsonar.qualitygate.wait=true
+        run: mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -B -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.qualitygate.wait=true
         env:
           SPRING_PROFILES_ACTIVE: test
 
